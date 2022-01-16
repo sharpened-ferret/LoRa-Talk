@@ -1,11 +1,15 @@
 import asyncio
+import time
 from websockets import connect
 
 async def send_message(uri, message, username):
-    data = "{0}: {1}".format(username, message)
+    data_format = "{0} - {1}: {2}"
+    display_format = "{0}: {1}"
+    send_time  = time.time()
+
     async with connect(uri) as endpoint:
-        await endpoint.send(data)
-        print(data)
+        await endpoint.send(data_format.format(send_time, username, message))
+        print(display_format.format(username, message))
         response = await endpoint.recv()
         print(response)
 
