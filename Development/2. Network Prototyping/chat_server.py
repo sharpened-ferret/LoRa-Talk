@@ -1,18 +1,22 @@
 import asyncio
-from asyncio.windows_events import NULL
+import websockets
 import json
 import sqlite3
 
 from websockets import serve
 
+connected = set()
+
 DATABASE_PATH = "chat.db"
-con = NULL
 
 async def handler(websocket):
+    # connected.add(websocket)
+    # print(connected)
     async for message in websocket:
         print(message)
         await recieve_msg(message)
         response = message
+        # websockets.broadcast(connected, response)
         await websocket.send(response)
 
 async def recieve_msg(message):
