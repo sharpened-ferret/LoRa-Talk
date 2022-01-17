@@ -25,7 +25,13 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
-    Serial.println((char*)data);
+    String message = (char*)data;
+    Serial.println(message);
+    message = "00" + message;
+    
+    LoRa.beginPacket();
+    LoRa.print(message);
+    LoRa.endPacket();
   }
 }
 
