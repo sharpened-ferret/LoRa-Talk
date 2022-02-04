@@ -38,7 +38,8 @@ def start():
         if (message.lower() == "quit" or message.lower() == "q"):
             active = False
         else:
-            asyncio.run(send_message(URI, message, username))
+            if (message != ""):
+                asyncio.run(send_message(URI, message, username))
     print(exit_string.format(username))
 
 start()
