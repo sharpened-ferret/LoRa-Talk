@@ -44,6 +44,7 @@ async def handler(websocket, path):
 
                 if reciever_task in done:
                     message = reciever_task.result()
+                    await message_echo(message)
                     await recieve_msg(message)
                 else:
                     reciever_task.cancel()
@@ -59,7 +60,7 @@ async def handler(websocket, path):
                     sender_task.cancel()
                     
         finally:
-            print("Exception Triggered:")
+            print("Websocket Disconnected: " + str(websocket))
             connected.remove(websocket)
 
 async def send_msg(websocket, path):
@@ -87,6 +88,10 @@ async def recieve_msg(message):
 async def socket_manager():
     async with serve(handler, "localhost", 8765):
         await asyncio.Future()
+
+async def message_echo(message):
+    print("Starting Echo Service")
+    websockets.broadcast(connected, message)
 
 
 def main():
