@@ -101,27 +101,11 @@ void setup() {
 
   initWebSocket();
   
-  server.on("/", HTTP_GET, [] (AsyncWebServerRequest *request) {
-    String inputMessage;
-//    if (request->hasParam("message")) {
-//      inputMessage = request->getParam("message")->value();
-//      Serial.println("message: " + inputMessage);
-//
-//      Serial.println("beginLora: " + inputMessage);
-//      LoRa.beginPacket();
-//      LoRa.print(inputMessage);
-//      LoRa.endPacket();
-//      Serial.println("endLora: " + inputMessage);
-//    }
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/html", index_html);
   });
 
-  server.on(
-    "/",
-    HTTP_POST,
-    [](AsyncWebServerRequest * request){
-        // The following print statements work + removing them makes no difference
-        // This is displayed on monitor "Content type::application/x-www-form-urlencoded"
+  server.on("/", HTTP_POST, [](AsyncWebServerRequest * request) {
         Serial.print("Content type::");
         Serial.println(request->contentType());
         Serial.println("OFF hit.");
@@ -144,7 +128,7 @@ void setup() {
             Serial.printf("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
         }
     }
-    
+    request->send(200, "text/html", index_html);
     });
    
   server.begin();
