@@ -10,8 +10,9 @@
 #define dio0 2
 
 // Network Credentials
-const char* ssid = "TestAP";
-const char* password = "pass";
+const char* ssid = "LoRaChat Endpoint";
+// *Minimum password length of eight characters required*
+const char* password = "password";
 
 // Set web server port number to 80
 //WiFiServer server(50);
@@ -73,7 +74,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <h2>ESP Web Chat</h2>
-  <form action="">
+  <form action="" method="post">
     <label for="message">Message:</label>
     <input type="text" id="message" name="message">
     <button type="submit">Submit</button>
@@ -87,11 +88,12 @@ void setup() {
 
   LoRa.setPins(ss, rst, dio0);
 
-  Serial.print("Setting AP (Access Point)…");
+  Serial.println("Setting AP)…");
+  Serial.printf("SSID: %s Password: %s\n", ssid, password);
   WiFi.softAP(ssid, password);
 
   IPAddress IP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
+  Serial.print("Endpoint IP address: ");
   Serial.println(IP);
 
   LoRa.setSyncWord(0xFF);
@@ -101,16 +103,49 @@ void setup() {
   
   server.on("/", HTTP_GET, [] (AsyncWebServerRequest *request) {
     String inputMessage;
-    if (request->hasParam("message")) {
-      inputMessage = request->getParam("message")->value();
-      Serial.println("message: " + inputMessage);
-      
-      LoRa.beginPacket();
-      LoRa.print(inputMessage);
-      LoRa.endPacket();
-    }
+//    if (request->hasParam("message")) {
+//      inputMessage = request->getParam("message")->value();
+//      Serial.println("message: " + inputMessage);
+//
+//      Serial.println("beginLora: " + inputMessage);
+//      LoRa.beginPacket();
+//      LoRa.print(inputMessage);
+//      LoRa.endPacket();
+//      Serial.println("endLora: " + inputMessage);
+//    }
     request->send(200, "text/html", index_html);
   });
+
+  server.on(
+    "/",
+    HTTP_POST,
+    [](AsyncWebServerRequest * request){
+        // The following print statements work + removing them makes no difference
+        // This is displayed on monitor "Content type::application/x-www-form-urlencoded"
+        Serial.print("Content type::");
+        Serial.println(request->contentType());
+        Serial.println("OFF hit.");
+    String message;
+    int params = request->params();
+    Serial.printf("%d params sent in\n", params);
+    for (int i = 0; i < params; i++)
+    {
+        AsyncWebParameter *p = request->getParam(i);
+        if (p->isFile())
+        {
+            Serial.printf("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());
+        }
+        else if (p->isPost())
+        {
+            Serial.printf("%s: %s \n", p->name().c_str(), p->value().c_str());
+        }
+        else
+        {
+            Serial.printf("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
+        }
+    }
+    
+    });
    
   server.begin();
   
