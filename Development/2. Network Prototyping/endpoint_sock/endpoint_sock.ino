@@ -27,10 +27,9 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     data[len] = 0;
     String message = (char*)data;
     Serial.println(message);
-    message = "00" + message;
     
     LoRa.beginPacket();
-    LoRa.print(message);
+    LoRa.print("00"+message);
     LoRa.endPacket();
   }
 }
