@@ -112,19 +112,15 @@ void setup() {
     String message;
     int params = request->params();
     Serial.printf("%d params sent in\n", params);
-    for (int i = 0; i < params; i++)
-    {
+    for (int i = 0; i < params; i++) {
         AsyncWebParameter *p = request->getParam(i);
-        if (p->isFile())
-        {
+        if (p->isFile()) {
             Serial.printf("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());
-        }
-        else if (p->isPost())
-        {
+        } 
+        else if (p->isPost()) {
             Serial.printf("%s: %s \n", p->name().c_str(), p->value().c_str());
         }
-        else
-        {
+        else {
             Serial.printf("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
         }
     }
@@ -132,9 +128,6 @@ void setup() {
     });
    
   server.begin();
-  
-
-  
 }
 
 void loop() {
