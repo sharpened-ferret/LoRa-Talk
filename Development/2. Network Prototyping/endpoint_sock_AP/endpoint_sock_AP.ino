@@ -77,7 +77,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   <form action="" method="post">
     <label for="message">Message:</label>
     <input type="text" id="message" name="message">
-    <button type="submit">Submit</button>
+    <button type="submit">Send</button>
   </form>
 </body>
 </html>
@@ -87,6 +87,12 @@ void setup() {
   Serial.begin(115200);
 
   LoRa.setPins(ss, rst, dio0);
+  while(!LoRa.begin(866E6)) {
+    Serial.println(".");
+    delay(500);
+  }
+  LoRa.setSyncWord(0xFF);
+  Serial.println("LoRa Initialising OK!");
 
   Serial.println("Setting AP)…");
   Serial.printf("SSID: %s Password: %s\n", ssid, password);
@@ -95,9 +101,6 @@ void setup() {
   IPAddress IP = WiFi.softAPIP();
   Serial.print("Endpoint IP address: ");
   Serial.println(IP);
-
-  LoRa.setSyncWord(0xFF);
-  Serial.println("LoRa Initialising OK!");
 
   initWebSocket();
   
