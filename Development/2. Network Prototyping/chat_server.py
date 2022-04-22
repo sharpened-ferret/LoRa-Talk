@@ -44,8 +44,8 @@ async def handler(websocket, path):
 
                 if reciever_task in done:
                     message = reciever_task.result()
-                    await message_echo(message)
-                    await recieve_msg(message)
+                    await message_echo(message[2:])
+                    await recieve_msg(message[2:])
                 else:
                     reciever_task.cancel()
 
@@ -66,7 +66,6 @@ async def handler(websocket, path):
 async def send_msg(websocket, path):
     global current_msg
     if (current_msg != ""):
-        #print(current_msg)
         await websocket.send(current_msg)
         returnMessage = current_msg
         current_msg = ""
@@ -86,7 +85,7 @@ async def recieve_msg(message):
 
 
 async def socket_manager():
-    async with serve(handler, "localhost", 8765):
+    async with serve(handler, "0.0.0.0", 80):
         await asyncio.Future()
 
 async def message_echo(message):
