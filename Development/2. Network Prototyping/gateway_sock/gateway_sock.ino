@@ -9,6 +9,7 @@
 // Network Credentials
 const char* ssid = "WiFiIsCool";
 const char* password = "CoolCastl3s";
+const char* server_uri = "ws://192.168.0.15:80/ws";
 
 WebSocketsClient webSocket;
 
@@ -37,8 +38,13 @@ void setup() {
   LoRa.setSyncWord(0xFF);
   Serial.println("LoRa Initialising OK!");
 
-  
-
+  webSocket.connect(server_uri);
+  webSocket.onMessage([](WebsocketsMessage msg)){
+    LoRa.beginPacket();
+    LoRa.print("00"+msg);
+    LoRa.endPacket();  
+    Serial.println("Sent Packet: \n" + msg);
+  };
 }
 
 void loop() {
@@ -48,8 +54,11 @@ void loop() {
     while (LoRa.available()) {
       String LoRaData = LoRa.readString();
       Serial.print(LoRaData);
+      webSocket.send(LoRaData);
     }
     Serial.print("' with RSSI ");
     Serial.println(LoRa.packetRssi());
   }
+  webSocket.poll();
+  
 }
