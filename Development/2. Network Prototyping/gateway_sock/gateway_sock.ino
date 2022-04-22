@@ -1,6 +1,6 @@
 #include <LoRa.h>
 #include <WiFi.h>
-#include <WebSocketsClient.h>
+#include <ArduinoWebsockets.h>
 
 #define ss 5
 #define rst 14
@@ -11,7 +11,24 @@ const char* ssid = "WiFiIsCool";
 const char* password = "CoolCastl3s";
 const char* server_uri = "ws://192.168.0.15:80/ws";
 
-WebSocketsClient webSocket;
+using namespace websockets;
+
+void onMessageCallback(WebsocketsMessage message) {
+    LoRa.beginPacket();
+    LoRa.print(message.data());
+    LoRa.endPacket();  
+    Serial.println("Sent Packet: \n" + message.data());
+}
+
+void onEventsCallback(WebsocketsEvent event, String data) {
+    if(event == WebsocketsEvent::ConnectionOpened) {
+        Serial.println("Connnection Opened");
+    } else if(event == WebsocketsEvent::ConnectionClosed) {
+        Serial.println("Connnection Closed");
+    }
+}
+
+WebsocketsClient client;
 
 
 
@@ -38,13 +55,13 @@ void setup() {
   LoRa.setSyncWord(0xFF);
   Serial.println("LoRa Initialising OK!");
 
-  webSocket.connect(server_uri);
-  webSocket.onMessage([](WebsocketsMessage msg)){
-    LoRa.beginPacket();
-    LoRa.print("00"+msg);
-    LoRa.endPacket();  
-    Serial.println("Sent Packet: \n" + msg);
-  };
+  client.onMessage(onMessageCallback);
+  client.onEvent(onEventsCallback);
+
+  client.connect(server_uri);
+////  client.onMessage([](WebsocketsMessage msg)){
+//    
+//  };
 }
 
 void loop() {
@@ -54,11 +71,10 @@ void loop() {
     while (LoRa.available()) {
       String LoRaData = LoRa.readString();
       Serial.print(LoRaData);
-      webSocket.send(LoRaData);
+      client.send(LoRaData);
     }
     Serial.print("' with RSSI ");
     Serial.println(LoRa.packetRssi());
   }
-  webSocket.poll();
-  
+  client.poll();
 }
