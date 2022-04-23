@@ -140,6 +140,7 @@ void loop() {
     while (LoRa.available()) {
       String LoRaData = LoRa.readString();
       Serial.print(LoRaData);
+      notifyClients(LoRaData);
     }
     Serial.print("' with RSSI ");
     Serial.println(LoRa.packetRssi());
