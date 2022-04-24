@@ -23,16 +23,21 @@ void notifyClients(String message) {
   ws.textAll(message);
 }
 
+void loraSend(String message) {
+  LoRa.beginPacket();
+  LoRa.print("00"+message);
+  LoRa.endPacket(true);
+  delay(100);
+
+  Serial.println("Sent Packet: " + message);
+}
+
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
     String message = (char*)data;
-    Serial.println(message);
-    
-    LoRa.beginPacket();
-    LoRa.print("00"+message);
-    LoRa.endPacket();
+    loraSend(message);
   }
 }
 
@@ -122,6 +127,7 @@ void setup() {
         } 
         else if (p->isPost()) {
             Serial.printf("%s: %s \n", p->name().c_str(), p->value().c_str());
+            loraSend("{\"username\":\"Guest\", \"timestamp\":0, \"message\": \"" + p->value() + "\"}");    
         }
         else {
             Serial.printf("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
