@@ -24,12 +24,13 @@ void notifyClients(String message) {
 }
 
 void loraSend(String message) {
-  LoRa.beginPacket();
+  while (!LoRa.beginPacket()) {
+    Serial.print(".");
+  }
   LoRa.print("00"+message);
-  LoRa.endPacket(true);
-  delay(100);
-
-  Serial.println("Sent Packet: " + message);
+  if (LoRa.endPacket()) {
+    Serial.println("Sent Packet: " + message);  
+  }
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
