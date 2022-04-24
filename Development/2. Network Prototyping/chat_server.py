@@ -43,9 +43,14 @@ async def handler(websocket, path):
                 )
 
                 if reciever_task in done:
-                    message = reciever_task.result()
-                    await message_echo(message[2:])
-                    await recieve_msg(message[2:])
+                    try:
+                        message = reciever_task.result()
+                        print("Current Message: " + message)
+                        await message_echo(message[2:])
+                        await recieve_msg(message[2:])
+                    except:
+                        print("Interference Detected")
+                        reciever_task.cancel()
                 else:
                     reciever_task.cancel()
 
@@ -53,7 +58,7 @@ async def handler(websocket, path):
                     message = sender_task.result()
                     #await send_msg(websocket, path)
                     if (message != None):
-                        print(message)
+                        print("Sending: " + message)
                         await websocket.send(str(message))
                 else:
                     print("Cancelled Send")
@@ -77,11 +82,16 @@ async def recieve_msg(message):
     global current_msg
     print("Recieved: " + message)
     current_msg = message
-    data = json.loads(message)
+    try:
+        data = json.loads(message)
 
-    cur = con.cursor()
-    cur.execute("INSERT INTO messages(username, timestamp, message) VALUES (?, ?, ?)", (data["username"], data["timestamp"], data["message"]))
-    con.commit()
+        cur = con.cursor()
+        cur.execute("INSERT INTO messages(username, timestamp, message) VALUES (?, ?, ?)", (data["username"], data["timestamp"], data["message"]))
+        con.commit()
+        return current_msg
+    except:
+        current_msg = ""
+        return current_msg
 
 
 async def socket_manager():
@@ -91,6 +101,7 @@ async def socket_manager():
 async def message_echo(message):
     print("Starting Echo Service")
     websockets.broadcast(connected, message)
+    # return message
 
 
 def main():
