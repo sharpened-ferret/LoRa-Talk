@@ -16,7 +16,7 @@ using namespace websockets;
 void onMessageCallback(WebsocketsMessage message) {
     LoRa.beginPacket();
     LoRa.print(message.data());
-    LoRa.endPacket();  
+    LoRa.endPacket(true);  
     Serial.println("Sent Packet: \n" + message.data());
 }
 
@@ -59,9 +59,6 @@ void setup() {
   client.onEvent(onEventsCallback);
 
   client.connect(server_uri);
-////  client.onMessage([](WebsocketsMessage msg)){
-//    
-//  };
 }
 
 void loop() {
