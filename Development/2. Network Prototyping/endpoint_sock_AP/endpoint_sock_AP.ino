@@ -4,7 +4,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-// Sets the GPIO pin numbers for the Transceiver connection
+// Sets the GPIO pin numbers for the LoRa Transceiver connection
 #define ss 5
 #define rst 14
 #define dio0 2
@@ -106,6 +106,8 @@ void setup() {
     Serial.println(".");
     delay(500);
   }
+  // Sets sync word for the LoRa library
+  // This must match with the sync word used by the Gateways
   LoRa.setSyncWord(0xFF);
   Serial.println("LoRa Initialising OK!");
 
