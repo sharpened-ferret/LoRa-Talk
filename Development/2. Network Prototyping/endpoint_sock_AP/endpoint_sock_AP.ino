@@ -1,38 +1,42 @@
 #include <SPI.h>
 #include <LoRa.h>
-
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+// Sets the GPIO pin numbers for the Transceiver connection
 #define ss 5
 #define rst 14
 #define dio0 2
 
-// Network Credentials
+// Sets Network Credentials for the hosted WiFi network
 const char* ssid = "LoRaChat Endpoint";
-// *Minimum password length of eight characters required*
+// Note: *Minimum password length of eight characters required*
 const char* password = "password";
 
-// Set web server port number to 80
-//WiFiServer server(50);
+// Sets server port and address path
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
+// Sends a WebSocket message to all connected clients
 void notifyClients(String message) {
   ws.textAll(message);
 }
 
+// Transmits message over LoRa, to message gateway nodes
 void loraSend(String message) {
   while (!LoRa.beginPacket()) {
     Serial.print(".");
   }
+  // "00" added to the message as a packet direction indicator
   LoRa.print("00"+message);
   if (LoRa.endPacket()) {
     Serial.println("Sent Packet: " + message);  
   }
 }
 
+// Callback for recieving a WebSocket message from a client
+// Sends message contents over LoRa
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
@@ -42,6 +46,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   }
 }
 
+// Handles WebSocket connections
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
  void *arg, uint8_t *data, size_t len) {
   switch (type) {
@@ -60,11 +65,13 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   }
 }
 
+// Initialises WebSocket and registers our handler
 void initWebSocket() {
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 }
 
+// Defines the HTML file to be served for HTTP web connections
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -89,9 +96,11 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+// Program initialisation. Runs on boot
 void setup() {
   Serial.begin(115200);
 
+  // Starts LoRa transceiver with configured settings. 
   LoRa.setPins(ss, rst, dio0);
   while(!LoRa.begin(866E6)) {
     Serial.println(".");
@@ -100,46 +109,44 @@ void setup() {
   LoRa.setSyncWord(0xFF);
   Serial.println("LoRa Initialising OK!");
 
+  // Starts WiFi access point and outputs details on Serial Port
   Serial.println("Setting AP)…");
   Serial.printf("SSID: %s Password: %s\n", ssid, password);
   WiFi.softAP(ssid, password);
-
   IPAddress IP = WiFi.softAPIP();
   Serial.print("Endpoint IP address: ");
   Serial.println(IP);
 
+  // Calls to configure the WebSocket Server
   initWebSocket();
-  
+
+  // Serves HTML file in response to client GET requests
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/html", index_html);
   });
 
+  // Relays client HTTP post data to gateway nodes over LoRa
   server.on("/", HTTP_POST, [](AsyncWebServerRequest * request) {
-        Serial.print("Content type::");
-        Serial.println(request->contentType());
-        Serial.println("OFF hit.");
     String message;
     int params = request->params();
-    Serial.printf("%d params sent in\n", params);
     for (int i = 0; i < params; i++) {
         AsyncWebParameter *p = request->getParam(i);
-        if (p->isFile()) {
-            Serial.printf("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());
-        } 
-        else if (p->isPost()) {
+        if (p->isPost()) {
             Serial.printf("%s: %s \n", p->name().c_str(), p->value().c_str());
             loraSend("{\"username\":\"Guest\", \"timestamp\":0, \"message\": \"" + p->value() + "\"}");    
         }
         else {
-            Serial.printf("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
+            Serial.println("Info: Recieved Invalid Post Content");
         }
     }
     request->send(200, "text/html", index_html);
     });
-   
+
+  // Starts the WebSocket and HTTP server
   server.begin();
 }
 
+// Recieves LoRa packets and relays them to clients over WebSocket connections
 void loop() {
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
