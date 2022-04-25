@@ -16,7 +16,8 @@ using namespace websockets;
 void onMessageCallback(WebsocketsMessage message) {
     LoRa.beginPacket();
     LoRa.print(message.data());
-    LoRa.endPacket(true);  
+    LoRa.endPacket(true);
+    delay(100);
     Serial.println("Sent Packet: \n" + message.data());
 }
 
@@ -65,13 +66,14 @@ void loop() {
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
     Serial.print("Recieved Packet: '");
+    String LoRaData;
     while (LoRa.available()) {
-      String LoRaData = LoRa.readString();
-      Serial.print(LoRaData);
-      client.send(LoRaData);
+      LoRaData = LoRa.readString();
     }
+    Serial.print(LoRaData);
     Serial.print("' with RSSI ");
     Serial.println(LoRa.packetRssi());
+    client.send(LoRaData);
   }
   client.poll();
 }
